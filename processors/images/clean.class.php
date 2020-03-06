@@ -1,0 +1,115 @@
+<?php
+
+class EmanagerCleanImagesProcessor extends modProcessor
+{
+    const DIRECTORY = 'assets/mgr/';
+    const EXTENSIONS = ['jpeg', 'jpg', 'png'];
+    const CONFIG_FILES = [MODX_BASE_PATH . 'sbox_cfg.php'];
+
+    public function process()
+    {
+        $this->files = $this->getFiles();
+
+        /* 1. Ищем в ресурсах */
+        foreach ($this->files as $key => $file) {
+    		$query = $this->modx->newQuery('modResource', [
+	    		"content LIKE '%$file%'"
+	    	]);
+			$query->select('id');
+			
+			$result = $this->modx->getValue($query->prepare());
+			if ($result) {
+				unset($this->files[$key]);
+			}
+    	}
+        
+        /* 2. Ищем в TV */
+        foreach ($this->files as $key => $file) {
+			$encoded = json_encode($file);
+			$encoded = str_replace("\/", "\\\\\\\/", $encoded);
+			
+			$query = $this->modx->newQuery('modTemplateVarResource', [
+	    		"(value LIKE '%$file%') OR (value LIKE '%$encoded%')"
+	    	]);
+	    	$query->select('id');
+	    	
+	    	$result = $this->modx->getValue($query->prepare());
+	    	if ($result) {
+				unset($this->files[$key]);
+			}
+		}
+        
+		/* 3. Ищем файлы, которым меньше недели */
+		$now = time();
+		foreach ($this->files as $key => $file) {
+			$modified = filemtime(MODX_BASE_PATH . self::DIRECTORY .$file);
+			if ($now - $modified < 604800) {
+				unset($this->files[$key]);
+			}
+		}
+        
+        /* 3. Ищем в конфиге коробки */
+        foreach (self::CONFIG_FILES as $cfg_file) {
+            $cfg_file = file_get_contents($cfg_file);
+            if (!$cfg_file) continue;
+
+            foreach ($this->files as $key => $file) {
+                if (stripos($cfg_file, $file) !== false) {
+                    unset($this->files[$key]);
+                }
+            }
+        }
+
+        /* Удаляем */
+		foreach ($this->files as $key => $file) {
+			$file = MODX_BASE_PATH . self::DIRECTORY . $file;
+			//unlink($file);
+		}
+
+        /* Чистим кэш */
+        if (file_exists(MODX_ASSETS_PATH . 'web/_cache/thumbs')) {
+            self::rm(MODX_ASSETS_PATH . 'web/_cache/thumbs');
+        }
+
+        return $this->success([
+            'files' => $this->files
+        ]);
+    }
+
+
+    /**
+     * Ищем все картинки
+     */
+    private function getFiles()
+    {
+    	$files = [];
+		$directory = MODX_BASE_PATH . self::DIRECTORY;
+		
+		$it = new RecursiveDirectoryIterator($directory);
+		foreach(new RecursiveIteratorIterator($it) as $file) {
+		    if (in_array(strtolower(array_pop(explode('.', $file))), self::EXTENSIONS)) {
+		    	$files[] = str_replace($directory, '', (string)$file);
+		    }
+		}
+		return $files;
+    }
+
+
+    /**
+     * 
+     */
+    private static function rm($target)
+    {
+        if(is_dir($target)){
+            $files = glob( $target . '*', GLOB_MARK ); //GLOB_MARK adds a slash to directories returned
+            foreach( $files as $file ){
+                self::rm($file);      
+            }
+            rmdir( $target );
+        } elseif(is_file($target)) {
+            unlink( $target );  
+        }
+    }
+
+}
+return "EmanagerCleanImagesProcessor";
