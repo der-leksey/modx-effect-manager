@@ -56,7 +56,15 @@ Sbox.tabs.TabImages = {
 						}
 					});
 				}	
-			}/** */
+			},/** */
+			{
+				html: `
+					<br>
+					<p>Удаляются картинки, которых нет в поле content и в TV параметрах, <br>
+					у которых дата изменения больше недели (меняется в emanager/processors/images/clean.class.php), <br>
+					которых нет в sbox_cfg</p>
+				`
+			}
 		]
 
 	}]

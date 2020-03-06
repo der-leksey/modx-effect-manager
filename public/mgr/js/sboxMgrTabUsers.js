@@ -49,13 +49,13 @@ Sbox.grid.Users = function (config) {
 		}],
         columns: [
             {dataIndex: 'primary_group',sortable: true, width: 200, header: 'Доступ',
-            	renderer(value, metaData, record, row, col, store, gridView){
-            		switch(value) {
-            			case 2: return 'Оператор';
-            			case 3: return 'Редактор контента';
-            			default: return '???';
-            		}
-				  }
+            	renderer(value, metaData, record, row, col, store, gridView) {
+            		let name = '?'
+            		Sbox.usergroups.forEach((v) => {
+            			if (+v.id === value) name = v.name;
+            		});
+            		return name;
+				}
             },
             {dataIndex: 'username',sortable: true, width: 200, header: 'Логин'},
             {dataIndex: 'fullname',sortable: true, width: 200, header: 'Имя'},
@@ -142,6 +142,23 @@ Sbox.window.UsersFieldsShare = [];
 
 
 
+const usergroups = [];
+Ext.onReady(() => {
+	if (Sbox.usergroups) {
+		Sbox.usergroups.forEach((u, i) => {
+			const radio = {
+				xtype: 'radio',
+		        boxLabel: u.name,
+		        name: 'primary_group',
+		        value: +u.id, inputValue: +u.id,
+			};
+			if (i + 1 == Sbox.usergroups.length) radio.checked = true;
+			usergroups.push(radio);
+		});
+	}
+});
+
+
 Sbox.window.UsersFieldsCreate = [{
 	xtype: 'textfield',
     name: 'username',
@@ -169,16 +186,5 @@ Sbox.window.UsersFieldsCreate = [{
 	},{
     fieldLabel: 'Доступ:',
     xtype: 'radiogroup',
-    items: [{
-        xtype: 'radio',
-        boxLabel: 'Оператор',
-        name: 'primary_group',
-        value: 2, inputValue: 2,
-    },{
-        xtype: 'radio',
-        boxLabel: 'Редактор контента',
-        name: 'primary_group',
-        value: 3, inputValue: 3,
-        checked:true
-    }]
+    items: usergroups
 },];

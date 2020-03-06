@@ -19,7 +19,7 @@ class EmanagerUsersUpdateProcessor extends modObjectUpdateProcessor {
 	public static function getInstance(modX &$modx,$className,$properties = array()) {
         $classKey = 'modUser';
         $object = $modx->newObject($classKey);
-		$className = 'SboxUsersUpdateProcessor';
+		$className = 'EmanagerUsersUpdateProcessor';
         $processor = new $className($modx,$properties);
         return $processor;
     }

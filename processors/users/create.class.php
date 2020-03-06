@@ -18,7 +18,7 @@ class EmanagerUsersCreateProcessor extends modObjectCreateProcessor {
     public static function getInstance(modX &$modx,$className,$properties = array()) {
         $classKey = 'modUser';
         $object = $modx->newObject($classKey);
-        $className = 'SboxUsersCreateProcessor';
+        $className = 'EmanagerUsersCreateProcessor';
         $processor = new $className($modx,$properties);
         return $processor;
     }
@@ -56,17 +56,21 @@ class EmanagerUsersCreateProcessor extends modObjectCreateProcessor {
         return parent::beforeSave();
     }
     public function afterSave() {
-    	$membership = $this->modx->newObject('modUserGroupMember');
-        $membership->fromArray(array(
-            'user_group' => $this->getProperty('primary_group'),
-            'role' => 1,
-            'member' => $this->object->get('id'),
-            'rank' => 0
-        ));
-    	$membership->save();
+    	$group = $this->getProperty('primary_group');
+    	if ($group && $group > 1) {
+    		$membership = $this->modx->newObject('modUserGroupMember');
+	        $membership->fromArray(array(
+	            'user_group' => $group,
+	            'role' => 1,
+	            'member' => $this->object->get('id'),
+	            'rank' => 0
+	        ));
+	    	$membership->save();
+	    	
+	        $this->object->addOne($membership, 'UserGroupMembers');
+    	}
     	
-        $this->object->addOne($membership, 'UserGroupMembers');
-        $this->object->set('primary_group', $this->getProperty('primary_group'));
+        //$this->object->set('primary_group', $this->getProperty('primary_group'));
         $this->object->save();
         
         return parent::afterSave();

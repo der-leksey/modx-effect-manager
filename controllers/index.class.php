@@ -13,6 +13,19 @@ class EmanagerIndexManagerController extends modExtraManagerController {
     
     public function loadCustomCssJs() {
     	if($this->isManager()) {
+    		
+    		$q = $this->modx->newQuery('modUserGroup');
+			$q->select(['name', 'id']);
+			$q->where([
+				'id:NOT IN' => [1]
+			]);
+			$q->sortby('id');
+			$q->prepare();
+			$q->stmt->execute();
+			$usergroups = $q->stmt->fetchAll(PDO::FETCH_ASSOC);
+    		$usergroups = json_encode($usergroups);
+    		
+    		
 			$assets = $this->modx->getOption('assets_url');
 		    $this->addJavascript($assets.'components/emanager/mgr/js/sboxMgr.js?time='.time());
 			$this->addJavascript($assets.'components/emanager/mgr/js/sboxMgrTabUsers.js?time='.time());
@@ -25,6 +38,7 @@ class EmanagerIndexManagerController extends modExtraManagerController {
 		    	}
 		    </style>
 		    <script>
+		    	Sbox.usergroups = ' . $usergroups . ' ;
 		        Ext.onReady(() => {
 		        	Sbox.config.connector_url = "'.$assets.'components/emanager/mgr/connector.php";
 		            MODx.add({
