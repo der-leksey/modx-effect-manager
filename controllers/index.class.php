@@ -17,7 +17,14 @@ class EmanagerIndexManagerController extends modExtraManagerController {
 		    $this->addJavascript($assets.'components/emanager/mgr/js/sboxMgr.js?time='.time());
 			$this->addJavascript($assets.'components/emanager/mgr/js/sboxMgrTabUsers.js?time='.time());
 			$this->addJavascript($assets.'components/emanager/mgr/js/sboxMgrTabImages.js?time='.time());
-		    $this->addHtml('<script>
+		    $this->addHtml('
+		    <style>
+		    	.x-window-dlg .x-window-body {
+		    		max-height: 80vh !important;
+		    		overflow: auto !important;
+		    	}
+		    </style>
+		    <script>
 		        Ext.onReady(() => {
 		        	Sbox.config.connector_url = "'.$assets.'components/emanager/mgr/connector.php";
 		            MODx.add({

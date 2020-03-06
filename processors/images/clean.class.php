@@ -5,10 +5,16 @@ class EmanagerCleanImagesProcessor extends modProcessor
     const DIRECTORY = 'assets/mgr/';
     const EXTENSIONS = ['jpeg', 'jpg', 'png'];
     const CONFIG_FILES = [MODX_BASE_PATH . 'sbox_cfg.php'];
+    const TIME = 604800; //неделя
+
 
     public function process()
     {
         $this->files = $this->getFiles();
+        $all = $this->files;
+        $total = count($this->files);
+        $removed = 0;
+        $props = $this->getProperties();
 
         /* 1. Ищем в ресурсах */
         foreach ($this->files as $key => $file) {
@@ -19,7 +25,7 @@ class EmanagerCleanImagesProcessor extends modProcessor
 			
 			$result = $this->modx->getValue($query->prepare());
 			if ($result) {
-				unset($this->files[$key]);
+                unset($this->files[$key]);
 			}
     	}
         
@@ -35,16 +41,16 @@ class EmanagerCleanImagesProcessor extends modProcessor
 	    	
 	    	$result = $this->modx->getValue($query->prepare());
 	    	if ($result) {
-				unset($this->files[$key]);
+                unset($this->files[$key]);
 			}
 		}
         
-		/* 3. Ищем файлы, которым меньше недели */
+		/* 3. Ищем файлы, у которых дата изменения меньше TIME */
 		$now = time();
 		foreach ($this->files as $key => $file) {
 			$modified = filemtime(MODX_BASE_PATH . self::DIRECTORY .$file);
-			if ($now - $modified < 604800) {
-				unset($this->files[$key]);
+			if (self::TIME && $now - $modified < self::TIME) {
+                unset($this->files[$key]);
 			}
 		}
         
@@ -62,17 +68,24 @@ class EmanagerCleanImagesProcessor extends modProcessor
 
         /* Удаляем */
 		foreach ($this->files as $key => $file) {
-			$file = MODX_BASE_PATH . self::DIRECTORY . $file;
-			//unlink($file);
+            $file = MODX_BASE_PATH . self::DIRECTORY . $file;
+            if ($props['confirm'] == 'true') unlink($file);
+            $removed++;
 		}
 
         /* Чистим кэш */
-        if (file_exists(MODX_ASSETS_PATH . 'web/_cache/thumbs')) {
+        if ($props['confirm'] == 'true') {
             self::rm(MODX_ASSETS_PATH . 'web/_cache/thumbs');
+            $this->modx->cacheManager->clearCache();
         }
+        
 
         return $this->success([
-            'files' => $this->files
+            'files' => $this->files,
+            'all' => $all,
+            'removed' => $removed,
+            'total' => $total,
+            'confirm' => $props['confirm']
         ]);
     }
 
